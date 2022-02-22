@@ -78,7 +78,7 @@ async def send_csv(message):
     last_message_time = message.created_at
     csv = open('bumpdate.csv', 'w', encoding='UTF-8')
     for bumper in bumper_guilds[message.guild.id].get_bumper():
-        csv.write(','.join(bumper) + '\n')
+        csv.write(f'{bumper[0]},{bumper[1]},{bumper[2]}\n')
     csv.close()
     await message.channel.send(file=discord.File('bumpdate.csv'))
 
