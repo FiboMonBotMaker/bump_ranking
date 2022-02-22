@@ -3,6 +3,7 @@ import discord
 import datetime
 from dotenv import load_dotenv
 import re
+import bump_guild
 load_dotenv()
 TOKEN = os.getenv('TOKEN')
 client = discord.Client()
@@ -17,19 +18,19 @@ apex_rank = ["Predator", "Master", "Diamond", "Platinum",
 
 namept = re.compile('<.*>')
 
-bump_channels = dict()
-chat_channels = dict()
+# guild毎に情報を登録する
+bumper_guilds = dict()
 
-bumper_id = []
 
 # bump_channelからidをリストにする関数
 
 
 async def set_bumper_id(message):
     global last_message_time
-    global bump_channels
+    global bumper_guilds
 
-    bump_channel = client.get_channel(bump_channels[message.guild.id])
+    bump_channel = client.get_channel(
+        bumper_guilds[message.guild.id].get_bump_channel())
 
     tmp_messages = bump_channel.history(
         limit=None, after=last_message_time)
@@ -37,22 +38,23 @@ async def set_bumper_id(message):
     async for _message in tmp_messages:
         if (_message.author.id == 302050872383242240):
             if("アップしたよ" in _message.embeds[0].description):
-                bumper_id.append(
-                    [_message.embeds[0].description[0:21], _message.created_at])
+                bumper_guilds[message.guild.id].get_bumper().append(
+                    [_message.embeds[0].description[0:21], _message.created_at, '0'])
         if (_message.author.id == 761562078095867916):
             if("アップしたよ" in (_message.embeds[0].fields[0].name if len(_message.embeds[0].fields[0].value) != 0 else "")):
-                bumper_id.append([
-                    str(namept.search(_message.embeds[0].description).group()).replace("!", ""), _message.created_at])
+                bumper_guilds[message.guild.id].get_bumper().append([
+                    str(namept.search(_message.embeds[0].description).group()).replace("!", ""), _message.created_at, '1'])
 
 # bump系コマンドの定義
 
 
 async def send_rank(message):
     global last_message_time
+    global bumper_guilds
     await set_bumper_id(message)
     last_message_time = message.created_at
     tmp_map = dict()
-    for lit in bumper_id:
+    for lit in bumper_guilds[message.guild.id].get_bumper():
         if(lit[0] in tmp_map):
             tmp_map[lit[0]] += 1
         else:
@@ -71,12 +73,12 @@ async def send_rank(message):
 
 async def send_csv(message):
     global last_message_time
+    global bumper_guilds
     await set_bumper_id(message)
     last_message_time = message.created_at
-    # print(bumper_id)
     csv = open('bumpdate.csv', 'w', encoding='UTF-8')
-    for bumper in bumper_id:
-        csv.write(f'{bumper[0]},{bumper[1]}\n')
+    for bumper in bumper_guilds[message.guild.id].get_bumper():
+        csv.write(','.join(bumper) + '\n')
     csv.close()
     await message.channel.send(file=discord.File('bumpdate.csv'))
 
@@ -98,18 +100,21 @@ chat_commands = {
 # デフォルト系コマンドを定義
 
 
+async def set_channel(message, channel_name):
+    await message.channel.send(f"{channel_name}チャンネルを{message.channel.name}にセットしたよ")
+
+
 async def set_bump_channel(message):
-    global bump_channels
-    bump_channels[message.guild.id] = message.channel.id
-    # print(bump_channels)
-    await message.channel.send(f"bumpチャンネルを{message.channel.name}にセットしたよ")
+    global bumper_guilds
+    bumper_guilds[message.guild.id].set_bump_channel(message.channel.id)
+    await set_channel(message=message, channel_name='bump')
 
 
 async def set_chat_channel(message):
-    global chat_channels
-    chat_channels[message.guild.id] = message.channel.id
-    # print(bump_channels)
-    await message.channel.send(f"chatチャンネルを{message.channel.name}にセットしたよ")
+    global bumper_guilds
+    bumper_guilds[message.guild.id].set_chat_channel(message.channel.id)
+    await set_channel(message=message, channel_name='chat')
+
 
 basic_commands = {
     '/set_bump_channel': set_bump_channel,
@@ -119,21 +124,40 @@ basic_commands = {
 
 # メッセージを受け取った時に実行するコマンド
 
+@client.event
+async def on_ready():
+    global bumper_guilds
+    # print(client.guilds)
+    for guild in client.guilds:
+        bumper_guilds[guild.id] = bump_guild.Bump_guild()
+    for guild in bumper_guilds.keys():
+        print(guild)
+
+
+@client.event
+async def on_guild_join(guild):
+    global bumper_guilds
+    if not (guild.id in bumper_guilds.keys()):
+        bumper_guilds[guild.id] = bump_guild.Bump_guild()
+    print(f"add {guild.id}")
+    await guild.text_channels[0].send('追加された旨のメッセージ')
+
 
 @client.event
 async def on_message(message):
     global last_message_time
+    global bumper_guilds
     if(message.author.bot):
         return
     # chat系のコマンド呼び出し部
     if(message.content in chat_commands):
-        if(message.guild.id in chat_channels.keys() and message.channel.id == chat_channels[message.guild.id]):
+        if(message.channel.id == bumper_guilds[message.guild.id].get_chat_channel()):
             await chat_commands[message.content](message)
         else:
             await message.channel.send(f"{message.content} を利用するには、まだチャンネルを設定していないようです")
     # bump系のコマンド呼び出し部
     elif(message.content in bump_commands):
-        if(message.guild.id in bump_channels.keys() and message.channel.id == bump_channels[message.guild.id]):
+        if(message.channel.id == bumper_guilds[message.guild.id].get_bump_channel()):
             await bump_commands[message.content](message)
             last_message_time = message.created_at
         else:
