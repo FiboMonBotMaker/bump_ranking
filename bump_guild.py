@@ -1,21 +1,38 @@
+import datetime
+
+ja_time = datetime.timedelta(hours=9)
+
+
 class Bump_guild():
 
     def __init__(self):
         self.bumpers = []
-        self.bump_channel = None
-        self.chat_channel = None
+        self.channels = {'bump': None, 'chat': None}
+        global ja_time
+        tmpdate = datetime.datetime.now()
+        self.date = datetime.datetime(
+            year=tmpdate.year, month=tmpdate.month, day=1) - ja_time
 
     def get_bumper(self):
         return self.bumpers
 
     def set_bump_channel(self, bump_channel):
-        self.bump_channel = bump_channel
+        self.channels['bump'] = bump_channel
 
     def get_bump_channel(self):
-        return self.bump_channel
+        return self.channels['bump']
 
     def set_chat_channel(self, chat_channel):
-        self.chat_channel = chat_channel
+        self.channels['chat'] = chat_channel
 
     def get_chat_channel(self):
-        return self.chat_channel
+        return self.channels['chat']
+
+    def set_date(self, date: datetime.datetime):
+        self.date = date
+
+    def get_date(self):
+        return self.date
+
+    def check_channels(self, channel_id):
+        return channel_id in self.channels.values()
