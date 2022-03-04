@@ -11,10 +11,28 @@ client = discord.Client()
 apex_rank = ["Predator", "Master", "Diamond", "Platinum",
              "Gold", "Silver", "Bronze"]
 
+
 namept = re.compile('<.*>')
 
 # guild毎に情報を登録する
 bumper_guilds = dict()
+
+
+async def add_bump(message, _message):
+    if("アップしたよ" in _message.embeds[0].description):
+        bumper_guilds[message.guild.id].get_bumper().append(
+            [str(namept.search(_message.embeds[0].description).group()), _message.created_at + ja_time, '0'])
+
+
+async def add_dissoku(message, _message):
+    if("アップしたよ" in (_message.embeds[0].fields[0].name if len(_message.embeds[0].fields[0].value) != 0 else "")):
+        bumper_guilds[message.guild.id].get_bumper().append([
+            str(namept.search(_message.embeds[0].description).group()).replace("!", ""), _message.created_at + ja_time, '1'])
+
+bbs_list = {
+    302050872383242240: add_bump,
+    761562078095867916: add_dissoku
+}
 
 
 # bump_channelからidをリストにする関数
@@ -31,33 +49,44 @@ async def set_bumper_id(message):
         limit=None, after=bumper_guilds[message.guild.id].get_date())
 
     async for _message in tmp_messages:
-        if (_message.author.id == 302050872383242240):
-            if("アップしたよ" in _message.embeds[0].description):
-                bumper_guilds[message.guild.id].get_bumper().append(
-                    [_message.embeds[0].description[0:21], _message.created_at + ja_time, '0'])
-        if (_message.author.id == 761562078095867916):
-            if("アップしたよ" in (_message.embeds[0].fields[0].name if len(_message.embeds[0].fields[0].value) != 0 else "")):
-                bumper_guilds[message.guild.id].get_bumper().append([
-                    str(namept.search(_message.embeds[0].description).group()).replace("!", ""), _message.created_at + ja_time, '1'])
+        if(_message.author.id in bbs_list.keys()):
+            await bbs_list[_message.author.id](message=message, _message=_message)
 
-# bump系コマンドの定義
+            # bump系コマンドの定義
 
 
 async def send_rank(message):
+    async def get_point(count, brocker, id) -> float:
+        categorys = [1.5, 1.0]
+        table = [1.0, 1.2, 1.5, 2.0, 2.7, 3.8]
+        if brocker != 0:
+            count = brocker
+        return (table[count] if count < len(table) else table[-1]) * categorys[int(id)]
+
     global bumper_guilds
     await set_bumper_id(message)
     bumper_guilds[message.guild.id].set_date(message.created_at)
     tmp_map = dict()
+    flg = None
+    count = 0
     for lit in bumper_guilds[message.guild.id].get_bumper():
-        if(lit[0] in tmp_map):
-            tmp_map[lit[0]] += 1
+        brocker = 0
+        if lit[0] == flg:
+            count += 1
         else:
-            tmp_map[lit[0]] = 1
+            brocker = count
+            count = 0
+        if(lit[0] in tmp_map):
+            tmp_map[lit[0]] += await get_point(count, brocker, lit[2])
+        else:
+            tmp_map[lit[0]] = await get_point(count, brocker, lit[2])
+        flg = lit[0]
     text = ""
     for i, n in enumerate(sorted(tmp_map.items(), key=lambda x: x[1], reverse=True)):
-        word = "【" + (apex_rank[i] if i < len(apex_rank) else apex_rank[-1]) + "】 "+n[0] +\
-            " "+str(n[1])+"回\n"
+        word = '【{:^10}】   {:>30}   {:>5.02f}point\n'.format(
+            (apex_rank[i] if i < len(apex_rank) else apex_rank[-1]), n[0], n[1])
         text += word
+    # print(text)
     embed = discord.Embed(
         title="＜月間bumpランキング＞",
         color=0x00ff00,
