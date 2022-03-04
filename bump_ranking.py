@@ -83,9 +83,9 @@ async def send_test(message):
     await message.channel.send("pong!")
 
 commands = {
-    '/rank': send_rank,
-    '/csv': send_csv,
-    "/test": send_test
+    '/rank': [send_rank, 'bump'],
+    '/csv': [send_csv, 'bump'],
+    "/test": [send_test, 'chat']
 }
 
 # デフォルト系コマンドを定義
@@ -143,8 +143,8 @@ async def on_message(message):
         return
     # コマンド呼び出し部
     if(message.content in commands):
-        if(bumper_guilds[message.guild.id].check_channels(message.channel.id)):
-            await commands[message.content](message)
+        if(bumper_guilds[message.guild.id].check_channels(commands[message.content], message.channel.id)):
+            await commands[message.content][0](message)
         else:
             await message.channel.send(f"{message.content} を利用するには、まだチャンネルを設定していないようです")
     # 設定項目系のチャンネル指定しないコマンド呼び出し部

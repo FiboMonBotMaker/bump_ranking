@@ -34,5 +34,5 @@ class Bump_guild():
     def get_date(self):
         return self.date
 
-    def check_channels(self, channel_id):
-        return channel_id in self.channels.values()
+    def check_channels(self, command, channel_id):
+        return channel_id == self.channels[command[1]]
