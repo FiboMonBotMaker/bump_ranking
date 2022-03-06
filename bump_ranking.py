@@ -8,8 +8,8 @@ load_dotenv()
 TOKEN = os.getenv('TOKEN')
 client = discord.Client()
 
-apex_rank = ["Predator", "Master", "Diamond", "Platinum",
-             "Gold", "Silver", "Bronze"]
+apex_rank = ['Predator', 'Master', 'Diamond', 'Platinum',
+             'Gold', 'Silver', 'Bronze']
 
 
 namept = re.compile('<.*>')
@@ -19,15 +19,15 @@ bumper_guilds = dict()
 
 
 async def add_bump(message, _message):
-    if("アップしたよ" in _message.embeds[0].description):
+    if('アップしたよ' in _message.embeds[0].description):
         bumper_guilds[message.guild.id].get_bumper().append(
             [str(namept.search(_message.embeds[0].description).group()), _message.created_at + ja_time, '0'])
 
 
 async def add_dissoku(message, _message):
-    if("アップしたよ" in (_message.embeds[0].fields[0].name if len(_message.embeds[0].fields) != 0 else "")):
+    if('アップしたよ' in (_message.embeds[0].fields[0].name if len(_message.embeds[0].fields) != 0 else '')):
         bumper_guilds[message.guild.id].get_bumper().append([
-            str(namept.search(_message.embeds[0].description).group()).replace("!", ""), _message.created_at + ja_time, '1'])
+            str(namept.search(_message.embeds[0].description).group()).replace('!', ''), _message.created_at + ja_time, '1'])
 
 bbs_list = {
     302050872383242240: add_bump,
@@ -82,14 +82,14 @@ async def send_rank(message):
         else:
             tmp_map[lit[0]] = await get_point(count, brocker, lit[2])
         flg = lit[0]
-    text = ""
+    text = ''
     for i, n in enumerate(sorted(tmp_map.items(), key=lambda x: x[1], reverse=True)):
         word = '【{:^10}】   {:>30}   {:>5.02f}point\n'.format(
             (apex_rank[i] if i < len(apex_rank) else apex_rank[-1]), n[0], n[1])
         text += word
     # print(text)
     embed = discord.Embed(
-        title="＜月間bumpランキング＞",
+        title='＜月間bumpランキング＞',
         color=0x00ff00,
         description=text)
     await message.channel.send(embed=embed)
@@ -110,19 +110,19 @@ async def send_csv(message):
 
 
 async def send_test(message):
-    await message.channel.send("pong!")
+    await message.channel.send('pong!')
 
 commands = {
     '/rank': [send_rank, 'bump'],
     '/csv': [send_csv, 'bump'],
-    "/test": [send_test, 'chat']
+    '/test': [send_test, 'chat']
 }
 
 # デフォルト系コマンドを定義
 
 
 async def set_channel(message, channel_name):
-    await message.channel.send(f"{channel_name}チャンネルを{message.channel.name}にセットしたよ")
+    await message.channel.send(f'{channel_name}チャンネルを{message.channel.name}にセットしたよ')
 
 
 async def set_bump_channel(message):
@@ -161,7 +161,7 @@ async def on_guild_join(guild):
     global bumper_guilds
     if not (guild.id in bumper_guilds.keys()):
         bumper_guilds[guild.id] = bump_guild.Bump_guild()
-    print(f"add {guild.id}")
+    print(f'add {guild.id}')
     await guild.text_channels[0].send('追加された旨のメッセージ')
 
 
@@ -176,7 +176,7 @@ async def on_message(message):
         if(bumper_guilds[message.guild.id].check_channels(commands[message.content], message.channel.id)):
             await commands[message.content][0](message)
         else:
-            await message.channel.send(f"{message.content} を利用するには、まだチャンネルを設定していないようです")
+            await message.channel.send(f'{message.content} を利用するには、まだチャンネルを設定していないようです')
     # 設定項目系のチャンネル指定しないコマンド呼び出し部
     else:
         if(message.content in basic_commands):
