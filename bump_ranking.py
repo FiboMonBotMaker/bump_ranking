@@ -25,7 +25,7 @@ async def add_bump(message, _message):
 
 
 async def add_dissoku(message, _message):
-    if("アップしたよ" in (_message.embeds[0].fields[0].name if len(_message.embeds[0].fields[0].value) != 0 else "")):
+    if("アップしたよ" in (_message.embeds[0].fields[0].name if len(_message.embeds[0].fields) != 0 else "")):
         bumper_guilds[message.guild.id].get_bumper().append([
             str(namept.search(_message.embeds[0].description).group()).replace("!", ""), _message.created_at + ja_time, '1'])
 
@@ -52,7 +52,8 @@ async def set_bumper_id(message):
         if(_message.author.id in bbs_list.keys()):
             await bbs_list[_message.author.id](message=message, _message=_message)
 
-            # bump系コマンドの定義
+
+# bump系コマンドの定義
 
 
 async def send_rank(message):

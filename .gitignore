@@ -1,3 +1,4 @@
 .env
 bumpdate.csv
 *.pyc
+home.py
