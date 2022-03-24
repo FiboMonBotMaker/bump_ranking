@@ -173,11 +173,11 @@ async def bump_command_base(ctx, process):
                 await ctx.respond('ちょっとまってろ')
                 await process(ctx)
             else:
-                await ctx.respond('ちょ待てよ')
+                await ctx.respond('ちょ待てよ', ephemeral=True)
         else:
-            await ctx.respond('設定チャネルが違います')
+            await ctx.respond('設定チャネルが違います', ephemeral=True)
     else:
-        await ctx.respond('チャンネル設定まだよ')
+        await ctx.respond('チャンネル設定まだよ', ephemeral=True)
 
 
 @bot.slash_command(description="ランクを表示します", guild_ids=guild_ids)
