@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 import discord
+from discord.ext import commands
 from dotenv import load_dotenv
 import re
 import bump_guild
@@ -181,11 +182,13 @@ async def bump_command_base(ctx, process):
 
 
 @bot.slash_command(description="ランクを表示します", guild_ids=guild_ids)
+@commands.cooldown(rate=1, per=10, type=commands.BucketType.guild)
 async def rank(ctx):
     await bump_command_base(ctx, process=send_rank)
 
 
 @bot.slash_command(description="CSVを取得します", guild_ids=guild_ids)
+@commands.cooldown(rate=1, per=10, type=commands.BucketType.guild)
 async def csv(ctx):
     await bump_command_base(ctx, process=send_csv)
 
@@ -195,10 +198,18 @@ setcommand = bot.create_group(
 
 
 @setcommand.command(name="bump_channel", description="bump channelを設定します")
+@commands.cooldown(rate=1, per=60, type=commands.BucketType.guild)
 async def set_bump_channel(ctx):
     global bumper_guilds
     bumper_guilds[ctx.guild.id].set_bump_channel(ctx.channel.id)
     await ctx.respond(f'Bumpチャンネルを{ctx.channel.name}にセットしたよ')
 
+
+@bot.event
+async def on_application_command_error(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        await ctx.respond(error, ephemeral=True)
+    else:
+        raise error
 
 bot.run(TOKEN)
