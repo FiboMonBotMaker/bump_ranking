@@ -6,6 +6,7 @@ ja_time = datetime.timedelta(hours=9)
 class Bump_guild():
 
     def __init__(self):
+        self.success: bool = True
         self.bumpers = []
         self.channels = {'bump': None, 'chat': None}
         global ja_time
