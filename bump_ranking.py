@@ -143,10 +143,6 @@ async def send_csv(ctx):
 # デフォルト系コマンドを定義
 
 
-async def set_channel(ctx, channel_name):
-    await ctx.respond(f'{channel_name}チャンネルを{ctx.channel.name}にセットしたよ')
-
-
 # 起動時に実行される処理
 @bot.event
 async def on_ready():
@@ -169,22 +165,29 @@ async def on_guild_join(guild):
     await guild.text_channels[0].send('追加された旨のメッセージ')
 
 
-@bot.slash_command(description="ランクを表示します", guild_ids=guild_ids)
-async def rank(ctx):
+async def bump_command_base(ctx, process):
     global bumper_guilds
     if bumper_guilds[ctx.interaction.guild_id].get_bump_channel() != None:
-        if bumper_guilds[ctx.interaction.guild_id].success:
-            await ctx.respond('ちょっとまってろ')
-            await send_rank(ctx)
+        if bumper_guilds[ctx.interaction.guild_id].get_bump_channel() == ctx.channel.id:
+            if bumper_guilds[ctx.interaction.guild_id].success:
+                await ctx.respond('ちょっとまってろ')
+                await process(ctx)
+            else:
+                await ctx.respond('ちょ待てよ')
         else:
-            await ctx.respond('ちょ待てよ')
+            await ctx.respond('設定チャネルが違います')
     else:
         await ctx.respond('チャンネル設定まだよ')
 
 
+@bot.slash_command(description="ランクを表示します", guild_ids=guild_ids)
+async def rank(ctx):
+    await bump_command_base(ctx, process=send_rank)
+
+
 @bot.slash_command(description="CSVを取得します", guild_ids=guild_ids)
 async def csv(ctx):
-    await send_csv(ctx)
+    await bump_command_base(ctx, process=send_csv)
 
 
 setcommand = bot.create_group(
@@ -195,11 +198,7 @@ setcommand = bot.create_group(
 async def set_bump_channel(ctx):
     global bumper_guilds
     bumper_guilds[ctx.guild.id].set_bump_channel(ctx.channel.id)
-    await set_channel(ctx=ctx, channel_name='bump')
+    await ctx.respond(f'Bumpチャンネルを{ctx.channel.name}にセットしたよ')
 
-
-@bot.slash_command(guild_ids=guild_ids)
-async def test(ctx):
-    print(ctx)
 
 bot.run(TOKEN)
