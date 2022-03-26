@@ -1,4 +1,5 @@
 from copy import copy
+from email.policy import default
 from googletrans import Translator
 from datetime import datetime
 import json
@@ -213,15 +214,9 @@ async def set_bump_channel(ctx):
 @bot.slash_command(description='褒められたときに名前を入れて使いましょう', guild_ids=guild_ids)
 async def get_home(
         ctx,
-        name: Option(str, required=False, description='ない場合はNBさんになります'),
-        homenai: Option(str, required=False, description='もし、褒めないられない場合はここで変更'),
-        nanika: Option(str, required=False, description='もし、自信以外の場合はここで変更')):
-    if not name:
-        name = 'NB'
-    if not homenai:
-        homenai = "褒められる"
-    if not nanika:
-        nanika = '自信'
+        name: Option(str, default='NB', required=False, description='ない場合はNBさんになります'),
+        homenai: Option(str, default='褒められる', required=False, description='もし、褒めないられない場合はここで変更'),
+        nanika: Option(str, default='自信', required=False, description='もし、自信以外の場合はここで変更')):
 
     up = f'{name}さんに{homenai}と'
     down = f'{nanika}になります！'
@@ -239,13 +234,9 @@ values = [
 @bot.slash_command(description='NB構文Y型', guild_ids=guild_ids)
 async def get_nb2(
     ctx,
-    any_hou: Option(str, choices=values, required=False, description='何報ですか？'),
-    honbun: Option(str, required=False,
+    any_hou: Option(str, default=values[0].value, choices=values, required=False, description='何報ですか？'),
+    honbun: Option(str, default='ワイ氏パチスロにいって', required=False,
                    description='本文を入力しよう→{本文}しまうwwwwwwwwww')):
-    if not any_hou:
-        any_hou = values[0].value
-    if not honbun:
-        honbun = 'ワイ氏パチスロにいって'
     down = f'{honbun}しまうwwwwwwwwww'
     await ctx.respond(f'https://gsapi.cyberrex.jp/image?top={urllib.parse.quote(any_hou)}&bottom={urllib.parse.quote(down)}')
 
@@ -303,15 +294,15 @@ def random_transe(word: str, lang: str, loop: int, lang_codes: list[str]) -> str
 
 @ itudokocommand.command(name='trans', description='再翻訳で支離滅裂な文章に変換します')
 async def itudokotrans(ctx, loop: Option(int, description='再翻訳回数を上げて精度を低めます デフォルト loop=1', min_value=1, max_value=5, default=1, required=False)):
-    await ctx.respond('wait')
-    await ctx.interaction.edit_original_message(
-        content=random_transe(
-            word=f'{random.choice(stack[0])}{random.choice(stack[1])}{random.choice(stack[2])}{random.choice(stack[3])}',
-            lang='ja',
-            loop=loop,
-            lang_codes=copy(lang_codes)
-        )
+    word = f'{random.choice(stack[0])}{random.choice(stack[1])}{random.choice(stack[2])}{random.choice(stack[3])}'
+    await ctx.respond(f'翻訳前 : {word}')
+    dest_word = random_transe(
+        word=word,
+        lang='ja',
+        loop=loop,
+        lang_codes=copy(lang_codes)
     )
+    await ctx.interaction.edit_original_message(content=f'翻訳前 : {word}\n翻訳後 : {dest_word}')
 
 
 @bot.event
