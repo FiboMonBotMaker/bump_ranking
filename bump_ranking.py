@@ -1,5 +1,4 @@
 from copy import copy
-from email.policy import default
 from googletrans import Translator
 from datetime import datetime
 import json
