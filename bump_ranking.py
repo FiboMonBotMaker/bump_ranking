@@ -19,6 +19,10 @@ bot = discord.Bot()
 
 guild_ids = [879288794560471050]
 
+
+bot.load_extension('cogs.nb')
+bot.load_extension('cogs.itudoko')
+
 # bumpとdissokuのID定義と各掲示板のポイント比率
 bump_id = 0
 dissoku_id = 1
@@ -159,16 +163,6 @@ async def on_ready():
     for guild in bumper_guilds.keys():
         print(guild)
 
-# ギルドに追加された際に実行される処理
-
-
-@bot.event
-async def on_guild_join(guild):
-    global bumper_guilds
-    if not (guild.id in bumper_guilds.keys()):
-        bumper_guilds[guild.id] = bump_guild.Bump_guild()
-    print(f'add {guild.id}')
-    await guild.text_channels[0].send('追加された旨のメッセージ')
 
 
 async def bump_command_base(ctx, process):
@@ -209,99 +203,6 @@ async def set_bump_channel(ctx):
     bumper_guilds[ctx.guild.id].set_bump_channel(ctx.channel.id)
     await ctx.respond(f'Bumpチャンネルを{ctx.channel.name}にセットしたよ')
 
-
-@bot.slash_command(description='褒められたときに名前を入れて使いましょう', guild_ids=guild_ids)
-async def get_home(
-        ctx,
-        name: Option(str, default='NB', required=False, description='ない場合はNBさんになります'),
-        homenai: Option(str, default='褒められる', required=False, description='もし、褒めないられない場合はここで変更'),
-        nanika: Option(str, default='自信', required=False, description='もし、自信以外の場合はここで変更')):
-
-    up = f'{name}さんに{homenai}と'
-    down = f'{nanika}になります！'
-
-    await ctx.respond(f'https://gsapi.cyberrex.jp/image?top={urllib.parse.quote(up)}&bottom={urllib.parse.quote(down)}')
-
-
-values = [
-    OptionChoice(name='悲報', value='【悲報wwwwwwwwww】'),
-    OptionChoice(name='朗報', value='【朗報wwwwwwwwww】'),
-    OptionChoice(name='良報', value='【良報WWwwwWwWwWww】')
-]
-
-
-@bot.slash_command(description='NB構文Y型', guild_ids=guild_ids)
-async def get_nb2(
-    ctx,
-    any_hou: Option(str, default=values[0].value, choices=values, required=False, description='何報ですか？'),
-    honbun: Option(str, default='ワイ氏パチスロにいって', required=False,
-                   description='本文を入力しよう→{本文}しまうwwwwwwwwww')):
-    down = f'{honbun}しまうwwwwwwwwww'
-    await ctx.respond(f'https://gsapi.cyberrex.jp/image?top={urllib.parse.quote(any_hou)}&bottom={urllib.parse.quote(down)}')
-
-itudokocommand = setcommand = bot.create_group(
-    name="itudoko", description="いつどこします", guild_ids=guild_ids)
-
-itudoko = [
-    OptionChoice(name='いつ', value=0),
-    OptionChoice(name='どこで', value=1),
-    OptionChoice(name='だれが', value=2),
-    OptionChoice(name='何をした', value=3)
-]
-
-FILE_NAME = 'itudoko.json'
-
-with open(FILE_NAME, mode='rt', encoding='utf-8') as file:
-    stack: list[list[str]] = json.load(file)
-
-
-def wright_json(stack: list[list[str]]):
-    with open(FILE_NAME, mode='wt', encoding='utf-8') as file:
-        json.dump(stack, file, ensure_ascii=False)
-
-
-@itudokocommand.command(name="set", description="いつどこワードを追加します")
-async def itudokoset(ctx, choise: Option(int, choices=itudoko), value: Option(str, description='リテラルを決定してね')):
-    stack[choise].append(value)
-    wright_json(stack=stack)
-    await ctx.respond(f'{value}をセットしました', ephemeral=True)
-
-
-@itudokocommand.command(name='get', description='今まで貯めた文字列でランダムにいつどこいます')
-async def itudokoget(ctx):
-    await ctx.respond(
-        f'{random.choice(stack[0])}{random.choice(stack[1])}{random.choice(stack[2])}{random.choice(stack[3])}')
-
-
-tr = Translator()
-
-lang_codes: list[str] = ['en', 'it', 'ne', 'ko', 'de']
-
-
-def random_transe(word: str, lang: str, loop: int, lang_codes: list[str]) -> str:
-    if loop == 0:
-        return tr.translate(word, src=lang, dest='ja').text
-    else:
-        random.shuffle(lang_codes)
-        tmp_lang = lang_codes.pop()
-        return random_transe(
-            word=tr.translate(word, src=lang, dest=tmp_lang).text,
-            lang=tmp_lang,
-            loop=loop - 1,
-            lang_codes=lang_codes)
-
-
-@ itudokocommand.command(name='trans', description='再翻訳で支離滅裂な文章に変換します')
-async def itudokotrans(ctx, loop: Option(int, description='再翻訳回数を上げて精度を低めます デフォルト loop=1', min_value=1, max_value=5, default=1, required=False)):
-    word = f'{random.choice(stack[0])}{random.choice(stack[1])}{random.choice(stack[2])}{random.choice(stack[3])}'
-    await ctx.respond(f'翻訳前 : {word}')
-    dest_word = random_transe(
-        word=word,
-        lang='ja',
-        loop=loop,
-        lang_codes=copy(lang_codes)
-    )
-    await ctx.interaction.edit_original_message(content=f'翻訳前 : {word}\n翻訳後 : {dest_word}')
 
 
 @bot.event
