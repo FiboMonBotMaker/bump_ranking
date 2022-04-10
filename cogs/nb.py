@@ -13,7 +13,7 @@ class NbCog(commands.Cog):
 
     nb = SlashCommandGroup('nb', 'test')
 
-    @nb.command(name='nb_home', description='褒められたときに名前を入れて使いましょう')
+    @nb.command(name='home', description='褒められたときに名前を入れて使いましょう')
     async def nb_home(
             self,
             ctx,
@@ -33,7 +33,7 @@ class NbCog(commands.Cog):
         OptionChoice(name='速報', value='【速報wwwwwwwwwww】')
     ]
 
-    @nb.command(name='nb_youtube', description='NB構文Y型')
+    @nb.command(name='youtube', description='NB構文Y型')
     async def get_nb2(
         self,
         ctx,
